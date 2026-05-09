@@ -75,7 +75,7 @@ A 3-layer MLP (input → 512 → 512 → 2) trained with MSE loss and Adam optim
 
 The `prepare_batch()` function applies mode dropout and optional period→spacing conversion on every batch, so the DataLoader always stores normalized periods and the conversion happens in the training loop.
 
-Change 'plt.close()' to 'plt.show' or otherwise save the figures after training, if desired.
+**Note on figures:** By default, plots are closed after generation (`plt.close()`). Replace `plt.close()` with `plt.show()` to display them interactively, or add `plt.savefig("name.png")` before `plt.close()` to save figures to files.
 
 ## Key findings
 
