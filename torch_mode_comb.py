@@ -24,7 +24,7 @@ do_dP_train = not do_P_train
 do_Pcut = False
 Pcut_val_up = 0.5
 
-dP_with_mask = False
+
 do_3_split = True
 
 do_unique = False
@@ -554,7 +554,7 @@ Om_true = y_true[:, 1]
 
 
 config_str = (f'P={do_P_train} dP={do_dP_train} '
-              f'mask={dP_with_mask} 3split={do_3_split} '
+              f'3split={do_3_split} '
               f'Pcut={do_Pcut} Pcut_val={Pcut_val_up}d '
               f'dropout={do_dropout} '
               f'p_drop={p_drop if do_dropout else 0}')
