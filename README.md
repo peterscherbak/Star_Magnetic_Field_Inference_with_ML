@@ -9,18 +9,18 @@ A PyTorch neural network that infers stellar magnetic field strength (B_c) and r
 - **Rotation** imparts a slope onto the period spacing pattern, and breaks the degeneracy of modes of different azimuthal frequency m
 - **Magnetic fields** suppress modes near a critical period P_crit where the Alfvén frequency equals the mode frequency, creating a characteristic curvature in the spacing pattern
 
-This project trains an MLP to map a sequence of observed periods → (B_c, Ω), trained on a grid of synthetic stellar models.
+This project trains a Multi-Layer Perceptron (MLP) neural net to map a sequence of observed periods → (B_c, Ω), trained on a grid of synthetic stellar models.
 
 ## Repository structure
 
 ```
 generate_data.py       — generates synthetic training data using TARM asymptotic solver
 torch_mode_comb.py     — trains and evaluates the neural network
-MS-1.5-young.data.GYRE — 1.5 M☉ main-sequence stellar model (GYRE format)
+MS-1.5-young.data.GYRE — 1.5 M☉ main-sequence stellar model corresponding to a typical γ Dor star   (GYRE format)
 l1_m-1.txt             — TARM eigenvalue table, l=1, m=-1 (prograde)
 l1_m0.txt              — TARM eigenvalue table, l=1, m=0  (zonal)
 l1_m+1.txt             — TARM eigenvalue table, l=1, m=+1 (retrograde)
-training_data_precomputed.npz   — training data for the current grid of B_c and Omega
+training_data_precomputed.npz   — training data for the current grid of B_c and Omega. Default input for torch_mode_comb.py
 ```
 
 ## Dependencies
@@ -74,6 +74,8 @@ A 3-layer MLP (input → 512 → 512 → 2) trained with MSE loss and Adam optim
 **Outputs:** log₁₀(B_c / G) and Ω (rad/s)
 
 The `prepare_batch()` function applies mode dropout and optional period→spacing conversion on every batch, so the DataLoader always stores normalized periods and the conversion happens in the training loop.
+
+Change 'plt.close()' to 'plt.show' or otherwise save the figures after training, if desired.
 
 ## Key findings
 
