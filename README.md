@@ -84,4 +84,4 @@ The `prepare_batch()` function applies mode dropout and optional period→spacin
 
 ## References
 
-- Rui, N. X. & Fuller, J. (2023) — TARM asymptotic theory; dispersion relation used in `generate_data.py`
+- Rui, Ong & Mathis (2023) — TARM asymptotic theory; dispersion relation used in `generate_data.py`
