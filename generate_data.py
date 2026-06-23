@@ -16,14 +16,13 @@ import matplotlib.pyplot as plt
 import os
 
 
-
-
+_HERE = os.path.dirname(os.path.abspath(__file__))
 
 # ══════════════════════════════════════════════════════════════
 # 1. LOAD STELLAR MODEL
 # ══════════════════════════════════════════════════════════════
 
-with open('MS-1.5-young.data.GYRE') as f:
+with open(os.path.join(_HERE, 'MS-1.5-young.data.GYRE')) as f:
     header = f.readline().split()
     n_pts  = int(header[0])
     M_star = float(header[1])   # g
@@ -38,7 +37,7 @@ Omega_0 = np.sqrt(G * M_star / R_star**3)   # rad/s, GYRE time unit
 
 
 Pmin_days = 0.1
-Pmax_days = 1.0
+Pmax_days = 2.0
 
 Prot_min_days = 0.5
 Prot_max_days = 8
@@ -95,52 +94,42 @@ Br = Br_shape(x)   # dimensionless shape on model grid
 
 N_arr  = np.where(N2 > 0, np.sqrt(N2), 0.0)
 
-#Bc_lo    = np.logspace(np.log10(10e3),  np.log10(100e3), 40)  # 10-100 kG, coarse
-#Bc_hi    = np.logspace(np.log10(100e3), np.log10(700e3), 100)  # 100-500 kG, dense
+# Two-part Bc sweep split at geometric midpoint — 199 unique values
+mid         = np.sqrt(10e3 * 700e3)
+Bc_sweep_1  = np.logspace(np.log10(10e3), np.log10(mid),   100)
+Bc_sweep_2  = np.logspace(np.log10(mid),  np.log10(700e3), 100)
+Bc_sweep    = np.concatenate([Bc_sweep_1, Bc_sweep_2[1:]])  # 199 unique values
 
-#Bc_sweep = np.concatenate([Bc_lo, Bc_hi[1:]])  
-
-
-
-Bc_sweep = np.logspace(np.log10(10e3), np.log10(700e3), 200)
-
-
-#Bc_sweep =   Bc_hi[1:]
-#Bc_sweep    = np.logspace(np.log10(100), np.log10(500e3), 50)
-#Omega_sweep = np.linspace(0, 2*np.pi/(1*86400), 10) #what val!
-
-Prot_test = 1.5
-#Omega_sweep = np.array([2*np.pi/(Prot_test*86400)]) 
-#Omega_sweep = np.array([0]) 
-
-
-#Bc_sweep = np.array([0])
-#Bc_sweep = np.array([475e3])
-#Bc_sweep = np.array([0, 475e3])
-
+# 100 log-spaced rotation periods → convert to angular velocity (199*100 = ~19 900 models)
 Prot_sweep  = np.logspace(np.log10(Prot_min_days), np.log10(Prot_max_days), 100)
-Omega_sweep = np.concatenate([2*np.pi / (Prot_sweep * 86400), [0.0]])
-
-
-
+Omega_sweep = 2*np.pi / (Prot_sweep * 86400)   # rad/s
 
 print(f'Bc range: {Bc_sweep.min()/1e3:.1f} – {Bc_sweep.max()/1e3:.0f} kG, {len(Bc_sweep)} pts')
 print(f'Prot range: {Prot_sweep.min():.1f} – {Prot_sweep.max():.1f} days, {len(Omega_sweep)} pts')
 print(f'Total models: {len(Bc_sweep) * len(Omega_sweep)}')
 
+#%%%
+#Omega_sweep = np.array([2*np.pi/(Prot_min*86400)])
 
 
+n_Bc    = len(Bc_sweep)
+n_Omega = len(Omega_sweep)
 
-#%%
+
+MAX_MODES = 150
+
+all_rows = []
+
+mv_arr = [-1]
 
 
 # ── Load tables once outside function ─────────────────────────────────────
 from scipy.interpolate import LinearNDInterpolator
 
 TABLE_FILES = {
-    -1: 'l1_m-1.txt',   # prograde
-     0: 'l1_m0.txt',    # zonal
-    +1: 'l1_m+1.txt',   # retrograde
+    -1: os.path.join(_HERE, 'l1_m-1.txt'),   # prograde
+     0: os.path.join(_HERE, 'l1_m0.txt'),    # zonal
+    +1: os.path.join(_HERE, 'l1_m+1.txt'),   # retrograde
 }
 
 INTERP_LAM = {}   # cache interpolators so they're built once
@@ -269,9 +258,11 @@ def solve_tarm_asym(Omega_rot, omB_phys, Bc_G,
 
         modes_asym = []
         
-        for n_g in range(n_save_lo, n_save_hi + 1):
-        #for n_g in range(n_lo, n_hi + 1):
-            
+        #for n_g in range(n_save_lo, n_save_hi + 1):
+        for n_g in range(n_lo, n_hi + 1):
+            if not n_g == 24:
+                do_nada=True
+                #continue
             #print(n_g)
             phi_g = np.pi * (n_g + eps_g)
             om0   = I_buoy0 / phi_g        # zero-B, zero-Ω estimate
@@ -324,7 +315,7 @@ def solve_tarm_asym(Omega_rot, omB_phys, Bc_G,
                         np.diff(np.sign(F_scan[idx_finite])) != 0)[0]]
             
                     if len(sign_changes) == 0:
-                        #do_nada=True
+                        do_nada=True
                         #print(f'no sign change: n_g={n_g}, om0={om0*1e6:.2f} uHz')
                         
                         continue
@@ -346,7 +337,7 @@ def solve_tarm_asym(Omega_rot, omB_phys, Bc_G,
                 
                     
         
-                if True: #omega_scan_min <= om_inertial <= omega_scan_max: #FIXME
+                if omega_scan_min <= om_inertial <= omega_scan_max: #FIXME
                     modes_asym.append({
                         'n_g'      : n_g,
                         'omega_bar': om_bar_sol,
@@ -390,11 +381,11 @@ def solve_tarm_asym(Omega_rot, omB_phys, Bc_G,
             sc1 = ax.scatter(P_asym[:-1], dP_asym, s=1, marker='s', #IMPORTANT
                        label=f'TARM  m={mv:+d}')
             try:
-                sc2 = ax.scatter(P_asym[:MAX_MODES], dP_asym[:MAX_MODES], s=1, marker='s', #IMPORTANT
+                sc2 = ax.scatter(P_asym[:MAX_MODES-1], dP_asym[:MAX_MODES], s=1, marker='s', #IMPORTANT
                            label=f'TARM  m={mv:+d}')
-            except:
-                print('failed in plotting modes')
-                #do_nada=True
+            except Exception as e:
+                print(e)
+                do_nada=True
             #P_grid  = np.linspace(0.05, 1, 100)
             #f       = interp1d(P_asym[:-1], dP_asym, bounds_error=False, fill_value=np.nan)
             #dP_grid = f(P_grid)
@@ -435,9 +426,12 @@ def solve_tarm_asym(Omega_rot, omB_phys, Bc_G,
             ax.grid(alpha=0.3)
             plt.tight_layout()
             #plt.show()
-            ax.set_xlim(0, 2.0)
+            ax.set_xlim(0, 2)
             ax.set_ylim(.8, 1.0)
             ax.set_ylim(-0.05, 1.5)
+            ax.set_ylim(.3, .9)
+            ax.set_ylim(0, 1)
+
             if Bc_G > 0:
                 #print('plot here')
                 P_crit_days = 2*np.pi / om_crit_iner / 86400
@@ -498,20 +492,6 @@ def solve_tarm_asym(Omega_rot, omB_phys, Bc_G,
 
 
 
-
-#%%
-
-
-n_Bc    = len(Bc_sweep)
-n_Omega = len(Omega_sweep)
-
-
-MAX_MODES = 100
-
-all_rows = []
-
-mv_arr = [-1]
-
 for i_Bc, Bc_G in enumerate(Bc_sweep):
     # recompute B-dependent quantities inside sweep
     B0r = Bc_G * Br
@@ -536,7 +516,7 @@ for i_Bc, Bc_G in enumerate(Bc_sweep):
             continue
         
         
-        if False:  #FOR PERIOD SPACING
+        if True:  #FOR PERIOD SPACING
             oms  = np.array([md['omega'] for md in modes])
             Ps   = np.sort(2*np.pi / oms / 86400)
             dPs  = np.diff(Ps) * 24
@@ -569,16 +549,18 @@ for i_Bc, Bc_G in enumerate(Bc_sweep):
                 'mask'       : mask,
             })
         else:
+            
             P_by_n = np.zeros(n_len)
             mask_n = np.zeros(n_len)
             n_modes = len(modes)
+            
             for md in modes:
                 n_g = md['n_g']
                 if n_save_lo <= n_g <= n_save_hi:
                     idx = n_g - n_save_lo
                     P_by_n[idx] = 2*np.pi / md['omega'] / 86400   # days
                     mask_n[idx] = 1.0
-
+            print(Bc_G, Omega_rot, P_by_n)
             all_rows.append({
                 'Bc_G'       : Bc_G,
                 'Omega_rot'  : Omega_rot,
@@ -595,9 +577,12 @@ print(f'Generated {len(all_rows)} training examples')
 print(f'Max modes seen: {max(r["n_modes"] for r in all_rows)}')
 print(f'Min modes seen: {min(r["n_modes"] for r in all_rows)}')
 
+
+
+
 #%%
 # ── Save ──────────────────────────────────────────────────────
-np.savez('training_data.npz',
+np.savez(os.path.join(_HERE, 'training_data.npz'),
          # parameters (labels)
          Bc          = np.array([r['Bc_G']        for r in all_rows]),
          Omega       = np.array([r['Omega_rot']    for r in all_rows]),
@@ -619,15 +604,6 @@ print(f'Shapes: P_raw={np.array([r["P_raw"] for r in all_rows]).shape}')#', '
       #f'dP_raw={np.array([r["dP_raw"] for r in all_rows]).shape}')
 
 
-
-
-
-
-
-
-
-
-#%%
 
 
 
