@@ -101,9 +101,7 @@ The full period sequence for each star can span 0.1–2.0 d, but real Kepler/TES
 
 This augmentation means the model sees the same star at many different window positions over training, preventing it from relying on absolute period values.
 
-### Multi-window test inference
 
-At evaluation time, 20 independent random windows are drawn per test star (using fixed seeds for reproducibility). For each window, the MDN returns a full K-component mixture. The 20 × K components are pooled into a super-mixture, and the most confident component (highest π_k / σ_k) is selected as the point prediction. Ω predictions are averaged across the 20 windows.
 
 ## Key flags in `torch_mode_comb.py`
 
@@ -126,7 +124,6 @@ At evaluation time, 20 independent random windows are drawn per test star (using
 | `do_unique_2d` | `False` | Stricter split: hold out unseen B_c × Ω grid rectangle for test |
 | `n_modes_max` | `100` | Cap on number of shortest modes kept per star |
 | `use_mixture_sigma` | `False` | If `True`, report law-of-total-variance uncertainty across all MDN components rather than the winning component's σ |
-| `n_test_windows` | `20` | Number of random windows per test star at evaluation time |
 | `debug_plot_batch` | `False` | Plot the first batch entering `prepare_batch`, then stop |
 | `debug_plot_sin_noise` | `False` | Plot clean vs noisy ΔP–P for a batch, then stop |
 
@@ -144,6 +141,4 @@ The MDN's per-star uncertainty σ_k acts as a quality flag: stars where the wind
 
 ## References
 
-- Rui, N. X. & Fuller, J. (2023) — TARM asymptotic theory and dispersion relation (Eq. 58) used in `generate_data.py`
 - Rui, N. X. et al. (2025) — Application to γ Dor stars
-- Mombarg, J. S. G. et al. (2021, 2024) — Observational period spacing patterns in γ Dor stars
