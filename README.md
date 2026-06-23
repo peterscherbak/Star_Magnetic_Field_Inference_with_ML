@@ -48,6 +48,8 @@ The file `training_data_random.npz` contains ~20 000 synthetic stars with (B_c, 
 python torch_mode_comb.py
 ```
 
+Diagnostic plots will pop up interactively during and after training. To save them to disk instead, replace `plt.show()` with `plt.savefig('filename.png', dpi=400)` in the relevant lines.
+
 ### Option B — regenerate training data
 
 ```bash
