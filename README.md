@@ -119,14 +119,14 @@ At evaluation time each test star is passed through `prepare_batch` with a singl
 | `no_overhang` | `False` | If `True`, window is clamped inside the star's mode range |
 | `P_max_hard_cut` | `1.0` d | Hard upper period limit applied in `prepare_batch` |
 | `modeuse` | `'random'` | Window mode: `'random'`, `'full'`, `'pmin'`, or `'fixed'` |
-| `do_dropout` | `False` | Random mode dropout during training (simulates missed detections) |
+| `do_dropout` | `False` | Random mode dropout during training (simulates missed detections, experimental) |
 | `p_drop` | `0.2` | Per-mode dropout probability |
 | `do_noise` | `False` | Add noise to periods during training |
 | `do_sin_noise` | `False` | Sinusoidal noise (physics-gap augmentation, experimental) |
 | `do_3_split` | `True` | 80/10/10 train/val/test split |
 | `do_unique_2d` | `False` | Stricter split: hold out unseen B_c × Ω grid rectangle for test |
 | `n_modes_max` | `100` | Cap on number of shortest modes kept per star |
-| `use_mixture_sigma` | `False` | If `True`, report law-of-total-variance uncertainty across all MDN components rather than the winning component's σ |
+| `use_mixture_sigma` | `False` | If `True`, report law-of-total-variance uncertainty across all MDN components rather than the winning component's σ (experimental) |
 | `debug_plot_batch` | `False` | Plot the first batch entering `prepare_batch`, then stop |
 | `debug_plot_sin_noise` | `False` | Plot clean vs noisy ΔP–P for a batch, then stop |
 
