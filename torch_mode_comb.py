@@ -1025,16 +1025,9 @@ print("Saved PyTorch Model State to model.pth")
 #%%
 #'''
 
-multi_window=False
-use_mixture_sigma = False 
+use_mixture_sigma = False
 test_seed = 42
-# peek at the window width that will be drawn with this seed
 torch.manual_seed(test_seed)
-if fixed_window:
-    window_width_used = window_width_hi
-else:
-    window_width_used = window_width_lo + torch.rand(1).item() * (window_width_hi - window_width_lo)
-torch.manual_seed(test_seed)   # reset so prepare_batch sees the same RNG state
 X_test = prepare_batch(P_norm_t[test_idx], mode=modeuse, do_noise_param=False)
 
 model.eval()
@@ -1064,44 +1057,6 @@ y_true = y_full[test_idx] * y_std + y_mean
 
 #'''
 
-
-#%%
-
-
-n_test_windows = 20
-
-model.eval()
-preds = []
-multi_window=True
-with torch.no_grad():
-    for i in range(n_test_windows):
-        torch.manual_seed(i)
-        X_test = prepare_batch(P_norm_t[test_idx], mode=modeuse,do_noise_param=False )
-        if use_mdn:
-            pi_logits, mu_bc, log_sig_bc, om_pred = model(X_test)
-            preds.append((F.softmax(pi_logits, dim=1).numpy(),
-                          mu_bc.numpy(),
-                          log_sig_bc.numpy(),
-                          om_pred.numpy()))
-        else:
-            preds.append(model(X_test).numpy())
-
-
-if use_mdn:
-    all_pi    = np.concatenate([p[0] for p in preds], axis=1)          # (N_test, K*n_windows)
-    all_mu_bc = np.concatenate([p[1] for p in preds], axis=1)          # (N_test, K*n_windows)
-    all_sig_bc = np.concatenate([np.exp(p[2]) for p in preds], axis=1) # (N_test, K*n_windows)
-    all_om    = np.stack([p[3] for p in preds], axis=1)                 # (N_test, n_windows)
-    best_k      = (all_pi / all_sig_bc).argmax(axis=1)   # confident AND low uncertainty
-    bc_pred     = all_mu_bc[np.arange(len(all_mu_bc)), best_k]         # (N_test,)
-    om_pred     = all_om.mean(axis=1)                                    # (N_test,) — avg Omega
-    sigma_best  = all_sig_bc[np.arange(len(all_sig_bc)), best_k] * y_std[0]  # log10(Bc) space
-    y_pred_norm = np.stack([bc_pred, om_pred], axis=1)
-else:
-    y_pred_norm = np.mean(preds, axis=0)
-
-y_pred = y_pred_norm * y_std + y_mean
-y_true = y_full[test_idx] * y_std + y_mean
 
 #%%
 
@@ -1199,8 +1154,7 @@ if use_mdn and sigma_best is not None:
     sigma_logBc = sigma_best                              # already in log10(Bc) space
     Bc_err_up   = 10**(np.log10(Bc_pred) + sigma_logBc) - Bc_pred
     Bc_err_lo   = Bc_pred - 10**(np.log10(Bc_pred) - sigma_logBc)
-    inf_str = (f'multi({n_test_windows} windows)' if multi_window
-               else f'win_width={window_width_used:.3f}d')
+    inf_str = win_str
 
     # ── Figure 1: full scatter, all stars, no errorbars, colored by sigma / Prot ──
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
