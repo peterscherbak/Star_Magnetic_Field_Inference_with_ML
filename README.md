@@ -101,7 +101,10 @@ The full period sequence for each star can span 0.1–2.0 d, but real Kepler/TES
 
 This augmentation means the model sees the same star at many different window positions over training, preventing it from relying on absolute period values.
 
+### Test inference
 
+At evaluation time each test star is passed through `prepare_batch` with a single random window (fixed seed for reproducibility). The MDN selects the highest-weight component as the point prediction for B_c, with σ_k of that
+ component as the per-star uncertainty.
 
 ## Key flags in `torch_mode_comb.py`
 
@@ -141,4 +144,4 @@ The MDN's per-star uncertainty σ_k acts as a quality flag: stars where the wind
 
 ## References
 
-- Rui, N. X. et al. (2025) — Application to γ Dor stars
+- Rui, N. Z. et al. (2023) — Asteroseismic g-mode period spacings in strongly magnetic rotating stars
